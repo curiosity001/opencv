@@ -1,0 +1,84 @@
+# parameters
+nc: 80  # number of classes
+depth_multiple: 1.0  # model depth multiple
+width_multiple: 1.0  # layer channel multiple
+
+# anchors
+anchors:
+  - [12,16, 19,36, 40,28]  # P3/8
+  - [36,75, 76,55, 72,146]  # P4/16
+  - [142,110, 192,243, 459,401]  # P5/32
+
+# yolov7 backbone
+backbone:
+  # [from, number, module, args]
+  [[-1, 1, Conv_Hs, [32, 3, 1]],  # 0
+  
+   [-1, 1, Conv_Hs, [64, 3, 2]],  # 1-P1/2
+   [-1, 1, DWConv2, [64, 3, 1]],
+   
+   [-1, 1, Conv_Hs, [128, 3, 2]],  # 3-P2/4
+
+   [-1, 1, ELAN_Fast, [256, 1, 1]],
+   [-1, 1, Conv_Hs, [256, 1, 1]],  #
+         
+   [-1, 1, MP2, [256,1,1]],#12 P3
+
+   [-1, 1, ELAN_Fast, [512, 1, 1]],
+   [-1, 1, Conv_Hs, [512, 1, 1]],  # 8
+         
+   [-1, 1, MP2, [512,1,1]],#9
+
+   [-1, 1, ELAN_Fast, [1024, 1, 1]],
+   [-1, 1, Conv_Hs, [1024, 1, 1]],  # 11
+         
+   [-1, 1, MP2, [1024,1,1]],#12
+
+   [-1, 1, ELAN_Fast2, [1024, 1, 1]],
+   [-1, 1, Conv_Hs, [1024, 1, 1]],  # 14
+  ]
+
+# yolov7 head
+head:
+  [[-1, 1, SPPCFSPC, [512]], # 1
+  
+   [-1, 1, Conv_Hs, [256, 1, 1]],
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [11, 1, Conv_Hs, [256, 1, 1]], # route backbone P4
+   [[-1, -2], 1, Concat, [1]],
+
+   [-1, 1, W_ELAN_Fast, [256, 1, 1]],
+   [-1, 1, Conv_Hs, [256, 1, 1]], # 21
+
+   [-1, 1, Conv_Hs, [128, 1, 1]],
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [8, 1, Conv_Hs, [128, 1, 1]], # route backbone P3
+   [[-1, -2], 1, Concat, [1]],
+   
+   [-1, 1, W_ELAN_Fast, [128, 1, 1]],
+   [-1, 1, Conv_Hs, [128, 1, 1]], #27
+      
+   [-1, 1, MP, []],
+   [-1, 1, Conv_Hs, [128, 1, 1]],
+   [-3, 1, Conv_Hs, [128, 1, 1]],
+   [-1, 1, DWConv2, [128, 3, 2]],
+   [[-1, -3, 21], 1, Concat, [1]],
+   
+   [-1, 1, W_ELAN_Fast, [256, 1, 1]],
+   [-1, 1, Conv_Hs, [256, 1, 1]], # 34
+      
+   [-1, 1, MP, []],
+   [-1, 1, Conv_Hs, [256, 1, 1]],
+   [-3, 1, Conv_Hs, [256, 1, 1]],
+   [-1, 1, DWConv2, [256, 3, 2]],
+   [[-1, -3, 15], 1, Concat, [1]],
+   
+   [-1, 1, W_ELAN_Fast, [512, 1, 1]],
+   [-1, 1, Conv_Hs, [512, 1, 1]], # 41
+   
+   [27, 1, RepConv, [256, 3, 1]],
+   [34, 1, RepConv, [512, 3, 1]],
+   [41, 1, RepConv, [1024, 3, 1]],
+
+   [[42,43,44], 1, IDetect, [nc, anchors]],   # Detect(P3, P4, P5)
+  ]

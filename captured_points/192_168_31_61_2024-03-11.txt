@@ -1,0 +1,2 @@
+<bound method CameraApp.area_names of <__main__.CameraApp object at 0x0000021716CC5750>> = [(680, 187), (929, 192), (817, 344)]
+J1_m01 = []
